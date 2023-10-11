@@ -10,7 +10,7 @@
   },
   "servers": [
     {
-      "url": "http://185.74.5.201:7001/v0",
+      "url": "https://techub.uz/v0",
       "description": "Check if email is good"
     }
   ],
