@@ -1,32 +1,627 @@
-<html>
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <!-- Load the latest Swagger UI code and style from npm using unpkg.com -->
-    <script src="https://unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3/swagger-ui.css" />
-    <title>Check email API</title>
-</head>
-
-<body>
-    <div id="swagger-ui"></div> <!-- Div to hold the UI component -->
-    <script>
-        window.onload = function () {
-            // Begin Swagger UI call region
-            const ui = SwaggerUIBundle({
-                url: "swagger.json", //Location of Open API spec in the repo
-                dom_id: '#swagger-ui',
-                deepLinking: true,
-                presets: [
-                    SwaggerUIBundle.presets.apis,
-                    SwaggerUIBundle.SwaggerUIStandalonePreset
-                ],
-                plugins: [
-                    SwaggerUIBundle.plugins.DownloadUrl
-                ],
-            })
-            window.ui = ui
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My 3-Month Weight Loss Journey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+        - Overview: HTML stats for goals (Inform).
+        - My Plan: HTML list for principles, Chart.js Pie chart for macros (Inform/Compare).
+        - Uzbek Cuisine: HTML styled lists/columns (Organize).
+        - Meal Plan: HTML cards/lists for daily meals with Gemini-powered "✨ Smart Swap" buttons for alternatives; Chart.js Line chart for weekly calorie overview (Inform/Organize/Change/Generate).
+        - Workout Schedule: HTML list/grid (Inform).
+        - Tips: HTML text with Gemini-powered "✨ Daily Motivation" button (Inform/Generate).
+        All interactions via vanilla JS. Chart.js for canvas-based charts. Gemini API for dynamic content generation. No SVG/Mermaid. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb; /* Light gray background */
         }
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            border-color: #3b82f6; /* Blue-500 */
+            color: #3b82f6;
+            background-color: #eff6ff; /* Blue-50 */
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .chart-container {
+                height: 350px;
+            }
+        }
+        h2 {
+            font-size: 1.75rem; /* Tailwind text-2xl */
+            font-weight: 600; /* Tailwind font-semibold */
+            margin-bottom: 1rem; /* Tailwind mb-4 */
+            color: #1f2937; /* Gray-800 */
+        }
+        h3 {
+            font-size: 1.25rem; /* Tailwind text-xl */
+            font-weight: 600; /* Tailwind font-semibold */
+            margin-top: 1.5rem; /* Tailwind mt-6 */
+            margin-bottom: 0.75rem; /* Tailwind mb-3 */
+            color: #374151; /* Gray-700 */
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.5rem; /* Tailwind rounded-lg */
+            padding: 1.5rem; /* Tailwind p-6 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Tailwind shadow-md */
+            margin-bottom: 1rem; /* Tailwind mb-4 */
+        }
+        .list-disc li {
+            margin-bottom: 0.5rem; /* Tailwind mb-2 */
+        }
+        .nav-icon {
+            margin-right: 0.5rem;
+        }
+        .gemini-button {
+            background-color: #8b5cf6; /* Violet-500 */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem; /* Tailwind rounded-md */
+            font-weight: 500; /* Tailwind font-medium */
+            transition: background-color 0.3s ease;
+        }
+        .gemini-button:hover {
+            background-color: #7c3aed; /* Violet-600 */
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #8b5cf6; /* Violet-500 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-gray-700">
+
+    <header class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold">My 3-Month Weight Loss Journey</h1>
+            <p class="mt-2 text-lg opacity-90">Your personalized plan for a healthier you in Uzbekistan!</p>
+        </div>
+    </header>
+
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-wrap justify-center -mb-px">
+                <button data-tab="overview" class="tab-button active text-sm sm:text-base font-medium text-gray-500 hover:text-blue-600 hover:border-blue-300 border-b-2 border-transparent px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap">
+                    <span class="nav-icon">🎯</span>Overview & Goals
+                </button>
+                <button data-tab="myPlan" class="tab-button text-sm sm:text-base font-medium text-gray-500 hover:text-blue-600 hover:border-blue-300 border-b-2 border-transparent px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap">
+                    <span class="nav-icon">📖</span>My Plan
+                </button>
+                <button data-tab="uzbekCuisine" class="tab-button text-sm sm:text-base font-medium text-gray-500 hover:text-blue-600 hover:border-blue-300 border-b-2 border-transparent px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap">
+                    <span class="nav-icon">🍲</span>Uzbek Cuisine Guide
+                </button>
+                <button data-tab="mealPlan" class="tab-button text-sm sm:text-base font-medium text-gray-500 hover:text-blue-600 hover:border-blue-300 border-b-2 border-transparent px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap">
+                    <span class="nav-icon">🥗</span>Weekly Meal Plan
+                </button>
+                <button data-tab="workoutSchedule" class="tab-button text-sm sm:text-base font-medium text-gray-500 hover:text-blue-600 hover:border-blue-300 border-b-2 border-transparent px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap">
+                    <span class="nav-icon">🏋️</span>Workout Schedule
+                </button>
+                <button data-tab="tips" class="tab-button text-sm sm:text-base font-medium text-gray-500 hover:text-blue-600 hover:border-blue-300 border-b-2 border-transparent px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap">
+                    <span class="nav-icon">💡</span>Progress & Tips
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <div id="overview" class="tab-content active">
+            <div class="card">
+                <h2>🎯 Overview & Goals</h2>
+                <p class="mb-6 text-gray-600">This section summarizes your primary weight loss targets and current body metrics. It's your quick reference to stay focused on the bigger picture of your 3-month journey.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-center">
+                    <div class="bg-blue-50 p-6 rounded-lg shadow">
+                        <h3 class="text-xl font-semibold text-blue-700">Target Weight Loss</h3>
+                        <p class="text-3xl font-bold text-blue-600">10 kg</p>
+                        <p class="text-sm text-gray-500">Over 3 months</p>
+                    </div>
+                    <div class="bg-green-50 p-6 rounded-lg shadow">
+                        <h3 class="text-xl font-semibold text-green-700">Weekly Goal</h3>
+                        <p class="text-3xl font-bold text-green-600">~0.8 kg</p>
+                        <p class="text-sm text-gray-500">Approx. 0.77-0.83 kg</p>
+                    </div>
+                    <div class="bg-indigo-50 p-6 rounded-lg shadow">
+                        <h3 class="text-xl font-semibold text-indigo-700">Target Daily Calories</h3>
+                        <p class="text-3xl font-bold text-indigo-600">1700-1800</p>
+                        <p class="text-sm text-gray-500">To create an ~880 Cal deficit</p>
+                    </div>
+                </div>
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div class="bg-gray-50 p-6 rounded-lg shadow">
+                        <h3 class="text-xl font-semibold text-gray-700">Body Metrics</h3>
+                        <ul class="list-disc list-inside text-gray-600 mt-2">
+                            <li>Current Weight: 75 kg</li>
+                            <li>Target Weight: 65 kg</li>
+                            <li>Height: 175 cm</li>
+                            <li>Current BMI: 24.49 (Healthy)</li>
+                            <li>Target BMI: 21.22 (Healthy)</li>
+                            <li>BMR: 1600 Calories</li>
+                            <li>Estimated TDEE: 2640 Calories</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-lg shadow">
+                        <h3 class="text-xl font-semibold text-gray-700">Timeline Visualized</h3>
+                        <div class="w-full bg-gray-200 rounded-full h-6 mt-3">
+                             <div class="bg-blue-500 h-6 rounded-full text-xs font-medium text-blue-100 text-center p-1 leading-none" style="width: 5%" id="progressTime">Week 1 of 12</div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">This is a visual representation. Track your actual progress weekly!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="myPlan" class="tab-content">
+            <div class="card">
+                <h2>📖 My Plan: Principles & Macronutrients</h2>
+                <p class="mb-6 text-gray-600">This section outlines the core principles for your success and your target macronutrient distribution. Understanding these will help you make informed food choices daily.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3>Key Principles for Success</h3>
+                        <ul class="list-disc pl-5 space-y-1 text-gray-600">
+                            <li>Consistent Calorie Tracking (1700-1800 Cal/day)</li>
+                            <li>Balanced Macronutrients</li>
+                            <li>Hydration: 2.5-3.5 liters of water daily</li>
+                            <li>Prioritize Whole, Unprocessed Foods</li>
+                            <li>Practice Portion Control</li>
+                            <li>Make Smart Uzbek Food Choices</li>
+                            <li>Regular Exercise: 45-60 mins daily (Cardio & Strength)</li>
+                            <li>Adequate Sleep: 7-9 hours</li>
+                            <li>Mindful Eating: Eat slowly, savor food</li>
+                            <li>Patience and Consistency</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Target Macronutrient Distribution</h3>
+                        <p class="text-sm text-gray-500 mb-2">Based on ~1750 Calories daily. Adjust portions to meet these targets.</p>
+                        <div class="chart-container h-64 md:h-80">
+                            <canvas id="macroChart"></canvas>
+                        </div>
+                         <ul class="list-disc list-inside text-gray-600 mt-4">
+                            <li><strong>Protein:</strong> 104-143g (416-572 Cal)</li>
+                            <li><strong>Fats:</strong> 39-58g (350-525 Cal)</li>
+                            <li><strong>Carbohydrates:</strong> ~205g (~819 Cal)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="uzbekCuisine" class="tab-content">
+            <div class="card">
+                <h2>🍲 Uzbek Cuisine Guide for Weight Loss</h2>
+                <p class="mb-6 text-gray-600">Navigating local cuisine is key! Here’s a guide to making healthy choices with delicious Uzbek food. Focus on preparation methods (grilled, steamed, baked) and portion sizes.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-green-50 p-4 rounded-lg shadow">
+                        <h3 class="text-green-700"><span class="nav-icon">👍</span>Embrace These</h3>
+                        <ul class="list-disc pl-5 space-y-1 text-gray-600">
+                            <li>Soups (Shurpa, Mastava - broth-based)</li>
+                            <li>Grilled Meats (Shashlik - chicken, fish, lean beef)</li>
+                            <li>Fresh Salads (Achichuk, etc. - light dressing)</li>
+                            <li>Steamed/Stewed Dishes (Dimlama - control oil)</li>
+                            <li>Legumes (Beans, Lentils, Chickpeas)</li>
+                            <li>Dairy (Qatiq, Suzma, Kefir - plain, unsweetened)</li>
+                            <li>Whole Fruits & Vegetables</li>
+                            <li>Green Tea (Kuk Choy) & Black Tea (Qora Choy) - no sugar</li>
+                        </ul>
+                    </div>
+                    <div class="bg-yellow-50 p-4 rounded-lg shadow">
+                        <h3 class="text-yellow-700"><span class="nav-icon">🤔</span>Moderate/Be Mindful Of</h3>
+                        <ul class="list-disc pl-5 space-y-1 text-gray-600">
+                            <li>Plov (small portions, less oil, more meat/veg)</li>
+                            <li>Non (Bread - portion control, whole grain if possible)</li>
+                            <li>Manti, Somsa, Chuchvara (lean fillings, steamed/baked)</li>
+                            <li>Lagman (broth-based, lots of veg, less oil/noodles)</li>
+                            <li>Fats and Oils (request less, use healthy oils sparingly)</li>
+                        </ul>
+                    </div>
+                    <div class="bg-red-50 p-4 rounded-lg shadow">
+                        <h3 class="text-red-700"><span class="nav-icon">🚫</span>Limit/Avoid</h3>
+                        <ul class="list-disc pl-5 space-y-1 text-gray-600">
+                            <li>Fried Foods (fried somsa, bo'g'irsoq)</li>
+                            <li>Sugary Drinks & Sweets (sugared compote, pastries)</li>
+                            <li>Processed Snacks (chips, crackers)</li>
+                            <li>Excessive Cream/Rich Sauces</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="mealPlan" class="tab-content">
+            <div class="card">
+                <h2>🥗 Sample Weekly Meal Plan (1700-1800 Calories/Day)</h2>
+                <p class="mb-6 text-gray-600">This is a sample plan. Feel free to swap meals with similar nutritional values. "Non" refers to a moderate slice. Adjust portions to meet your daily calorie target. Click on a day to see the meal details. Use "✨ Smart Swap" for AI-powered alternatives!</p>
+
+                <div class="mb-6 chart-container h-80 md:h-96">
+                    <canvas id="weeklyCalorieChart"></canvas>
+                </div>
+
+                <div id="mealPlanAccordion" class="space-y-2">
+                </div>
+            </div>
+        </div>
+
+        <div id="workoutSchedule" class="tab-content">
+            <div class="card">
+                <h2>🏋️ Workout Schedule Integration</h2>
+                <p class="mb-6 text-gray-600">Your daily 45-60 minutes of exercise is fantastic! Here’s a sample weekly structure. Remember to listen to your body and include rest and recovery.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="p-4 bg-gray-50 rounded-lg shadow"><strong>Monday:</strong> Full Body Strength Training</div>
+                    <div class="p-4 bg-gray-50 rounded-lg shadow"><strong>Tuesday:</strong> Cardio (e.g., 45 min run/brisk walk + 15 min core)</div>
+                    <div class="p-4 bg-gray-50 rounded-lg shadow"><strong>Wednesday:</strong> Upper Body Strength Training</div>
+                    <div class="p-4 bg-gray-50 rounded-lg shadow"><strong>Thursday:</strong> Cardio (e.g., 45 min cycling + 15 min stretching)</div>
+                    <div class="p-4 bg-gray-50 rounded-lg shadow"><strong>Friday:</strong> Lower Body Strength Training</div>
+                    <div class="p-4 bg-gray-50 rounded-lg shadow"><strong>Saturday:</strong> Longer Cardio (e.g., 60 min hike, swim, or sports)</div>
+                    <div class="p-4 bg-gray-50 rounded-lg shadow"><strong>Sunday:</strong> Active Recovery (Yoga, Pilates, light walk)</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tips" class="tab-content">
+            <div class="card">
+                <h2>💡 Progress & Important Tips</h2>
+                <p class="mb-6 text-gray-600">Remember these important notes as you progress on your journey. Consistency and a positive mindset are your greatest allies! Need a boost? Get some AI-powered motivation below.</p>
+                <ul class="list-disc pl-5 space-y-2 text-gray-600">
+                    <li><strong>Flexibility:</strong> This is a sample plan. Swap meals with similar nutritional values based on preferences and availability.</li>
+                    <li><strong>Cooking at Home:</strong> Gives you better control over ingredients and portions.</li>
+                    <li><strong>Eating Out:</strong> Make smart choices: grilled vs. fried, less oil, more vegetables, control portions.</li>
+                    <li><strong>Listen to Your Body:</strong> If excessively hungry, add non-starchy vegetables or lean protein. If full, reduce portions slightly.</li>
+                    <li><strong>Plateaus:</strong> Normal for weight loss to slow. Re-evaluate intake/activity, be patient. May need slight adjustments.</li>
+                    <li><strong>Non-Scale Victories:</strong> Notice how clothes fit, energy levels, workout improvements. These are key progress indicators!</li>
+                    <li><strong>Consult Professionals:</strong> Always wise to discuss significant dietary changes or new exercise programs with your doctor or a registered dietitian.</li>
+                </ul>
+
+                <div class="mt-8 text-center">
+                    <button id="getMotivationButton" class="gemini-button">✨ Get Daily Motivation</button>
+                    <div id="motivationResult" class="mt-4 p-4 bg-purple-50 text-purple-700 rounded-lg min-h-[50px] flex items-center justify-center hidden">
+                        Click the button for a motivational tip!
+                    </div>
+                     <div id="motivationLoader" class="loading-spinner mt-4 hidden"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-center py-8 mt-8 bg-gray-100 border-t border-gray-200">
+        <p class="text-gray-500">&copy; <span id="currentYear"></span> Your Personalized Weight Loss Plan. Stay focused and enjoy the journey!</p>
+    </footer>
+
+    <div id="smartSwapModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold mb-4 text-gray-800">✨ Smart Meal Swap Suggestion</h3>
+            <div id="smartSwapResult" class="text-gray-600 mb-4 min-h-[100px]">
+                Loading suggestion...
+            </div>
+            <div id="smartSwapLoader" class="loading-spinner mb-4"></div>
+            <button id="closeSmartSwapModal" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                tabContents.forEach(content => content.classList.remove('active'));
+                document.getElementById(button.dataset.tab).classList.add('active');
+            });
+        });
+
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        
+        const totalWeeks = 12;
+        let currentWeek = 1; 
+        const progressTimeBar = document.getElementById('progressTime');
+        if (progressTimeBar) {
+            progressTimeBar.style.width = `${(currentWeek / totalWeeks) * 100}%`;
+            progressTimeBar.textContent = `Week ${currentWeek} of ${totalWeeks}`;
+        }
+
+        const macroData = {
+            labels: ['Protein (104-143g)', 'Fats (39-58g)', 'Carbohydrates (~205g)'],
+            datasets: [{
+                label: 'Target Macronutrient Calories',
+                data: [494, 437, 819],
+                backgroundColor: ['rgba(59, 130, 246, 0.7)','rgba(16, 185, 129, 0.7)','rgba(245, 158, 11, 0.7)'],
+                borderColor: ['rgba(59, 130, 246, 1)','rgba(16, 185, 129, 1)','rgba(245, 158, 11, 1)'],
+                borderWidth: 1
+            }]
+        };
+        const macroConfig = {
+            type: 'pie',
+            data: macroData,
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed !== null) { label += context.parsed + ' Calories'; }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        const macroChartCtx = document.getElementById('macroChart');
+        if (macroChartCtx) { new Chart(macroChartCtx, macroConfig); }
+
+        const mealPlanData = [
+            { day: "Monday", workout: "Strength Training", meals: [
+                { name: "Breakfast", calories: 400, details: "Oatmeal (1/2 cup dry) with water/low-fat milk, berries (1/2 cup), chopped walnuts (10g). Green tea." },
+                { name: "Lunch", calories: 500, details: "Large bowl of chicken shurpa (vegetables, lean chicken). Small non. Tomato/cucumber salad." },
+                { name: "Snack", calories: 150, details: "1 apple, handful of almonds (15g)." },
+                { name: "Dinner", calories: 600, details: "Grilled fish (150g), steamed/roasted vegetables. Quinoa or buckwheat (1/2 cup cooked)." }
+            ], totalCalories: 1650 },
+            { day: "Tuesday", workout: "Cardio - Brisk Walking/Jogging", meals: [
+                { name: "Breakfast", calories: 350, details: "2 boiled eggs, 1 slice whole-wheat non, sliced tomatoes/cucumbers. Black tea." },
+                { name: "Lunch", calories: 550, details: "Mastava (rice & veg soup with beef) - focus on broth/veg. Achichuk salad." },
+                { name: "Snack", calories: 150, details: "Plain qatiq (1 cup) with flax seeds." },
+                { name: "Dinner", calories: 600, details: "Chicken breast (150g) stir-fried with vegetables (minimal oil). Brown rice (1/2 cup cooked)." }
+            ], totalCalories: 1650 },
+            { day: "Wednesday", workout: "Strength Training", meals: [
+                { name: "Breakfast", calories: 400, details: "Smoothie (spinach, banana, protein powder, low-fat milk/qatiq, chia seeds)." },
+                { name: "Lunch", calories: 500, details: "Dimlama (stewed lean beef/chicken with potatoes, carrots, cabbage, onions – emphasize veg)." },
+                { name: "Snack", calories: 150, details: "1 pear, small handful of pumpkin seeds." },
+                { name: "Dinner", calories: 600, details: "Lentil soup. Large green salad (lemon juice, olive oil). Small non." }
+            ], totalCalories: 1650 },
+            { day: "Thursday", workout: "Cardio - Cycling", meals: [
+                { name: "Breakfast", calories: 350, details: "Suzma or cottage cheese (1 cup) with berries, drizzle of honey (1 tsp). Green tea." },
+                { name: "Lunch", calories: 550, details: "Leftover Dimlama." },
+                { name: "Snack", calories: 150, details: "An orange, 1-2 rice cakes." },
+                { name: "Dinner", calories: 600, details: "Chicken/beef shashlik (2-3 skewers), grilled vegetables. Side of Bademjan salad (not too oily)." }
+            ], totalCalories: 1650 },
+            { day: "Friday", workout: "Strength Training", meals: [
+                { name: "Breakfast", calories: 400, details: "Buckwheat kasha (1/2 cup dry) with plain qatiq, chopped dried apricots (2-3)." },
+                { name: "Lunch", calories: 500, details: "Lagman (broth-based, lean meat, lots of veg, moderate noodles)." },
+                { name: "Snack", calories: 150, details: "Handful of walnuts (15g)." },
+                { name: "Dinner", calories: 600, details: "Baked salmon (150g) with asparagus, small baked sweet potato." }
+            ], totalCalories: 1650 },
+            { day: "Saturday", workout: "Longer Cardio or Hike", meals: [
+                { name: "Breakfast", calories: 350, details: "2-egg omelet with spinach/mushrooms. Slice of non." },
+                { name: "Lunch", calories: 550, details: "Small Plov (more meat/carrots, less rice/oil). Large achichuk salad." },
+                { name: "Snack", calories: 150, details: "A glass of kefir." },
+                { name: "Dinner", calories: 600, details: "Manti (4-5 steamed, lean filling) with plain qatiq, large vegetable salad." }
+            ], totalCalories: 1650 },
+            { day: "Sunday", workout: "Active Recovery - Yoga/Stretching", meals: [
+                { name: "Breakfast", calories: 400, details: "Whole-wheat toast (2 slices) with avocado (1/2), sliced tomatoes." },
+                { name: "Lunch", calories: 500, details: "Leftover manti and salad." },
+                { name: "Snack", calories: 150, details: "A peach or other seasonal fruit." },
+                { name: "Dinner", calories: 600, details: "Tovuq shashlik (chicken skewers), large Greek-style salad." }
+            ], totalCalories: 1650 }
+        ];
+
+        const mealPlanAccordion = document.getElementById('mealPlanAccordion');
+        const smartSwapModal = document.getElementById('smartSwapModal');
+        const smartSwapResultDiv = document.getElementById('smartSwapResult');
+        const smartSwapLoader = document.getElementById('smartSwapLoader');
+        const closeSmartSwapModalButton = document.getElementById('closeSmartSwapModal');
+
+        if (mealPlanAccordion) {
+            mealPlanData.forEach((dayData, index) => {
+                const contentId = `content-${index}`;
+                const dayDiv = document.createElement('div');
+                dayDiv.classList.add('border', 'border-gray-200', 'rounded-md');
+
+                const button = document.createElement('button');
+                button.classList.add('w-full', 'p-4', 'text-left', 'font-semibold', 'text-gray-700', 'hover:bg-gray-50', 'focus:outline-none', 'flex', 'justify-between', 'items-center', 'rounded-t-md');
+                button.setAttribute('aria-expanded', 'false');
+                button.setAttribute('aria-controls', contentId);
+                button.innerHTML = `
+                    <span>${dayData.day} - Approx. ${dayData.totalCalories} Cal (Workout: ${dayData.workout})</span>
+                    <svg class="w-5 h-5 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                `;
+
+                const contentDiv = document.createElement('div');
+                contentDiv.id = contentId;
+                contentDiv.classList.add('p-4', 'border-t', 'border-gray-200', 'bg-gray-50', 'hidden', 'rounded-b-md');
+                
+                const mealList = document.createElement('ul');
+                mealList.classList.add('space-y-4'); // Increased spacing for swap button
+                dayData.meals.forEach(meal => {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('flex', 'justify-between', 'items-center');
+                    listItem.innerHTML = `
+                        <div>
+                            <strong class="text-indigo-600">${meal.name} (${meal.calories} Cal):</strong> ${meal.details}
+                        </div>
+                        <button class="gemini-button smart-swap-btn text-xs ml-2 whitespace-nowrap" data-meal-name="${meal.name}" data-meal-details="${meal.details}" data-meal-calories="${meal.calories}">
+                            ✨ Smart Swap
+                        </button>
+                    `;
+                    mealList.appendChild(listItem);
+                });
+                contentDiv.appendChild(mealList);
+
+                button.addEventListener('click', () => {
+                    const isExpanded = button.getAttribute('aria-expanded') === 'true';
+                    button.setAttribute('aria-expanded', !isExpanded);
+                    contentDiv.classList.toggle('hidden');
+                    button.querySelector('svg').classList.toggle('rotate-180');
+                });
+
+                dayDiv.appendChild(button);
+                dayDiv.appendChild(contentDiv);
+                mealPlanAccordion.appendChild(dayDiv);
+            });
+        }
+        
+        if (closeSmartSwapModalButton) {
+            closeSmartSwapModalButton.addEventListener('click', () => {
+                smartSwapModal.classList.remove('active');
+            });
+        }
+        
+        // Event delegation for Smart Swap buttons
+        if (mealPlanAccordion) {
+            mealPlanAccordion.addEventListener('click', async function(event) {
+                if (event.target.classList.contains('smart-swap-btn')) {
+                    const mealName = event.target.dataset.mealName;
+                    const mealDetails = event.target.dataset.mealDetails;
+                    const mealCalories = event.target.dataset.mealCalories;
+
+                    smartSwapModal.classList.add('active');
+                    smartSwapResultDiv.innerHTML = '';
+                    smartSwapLoader.classList.remove('hidden');
+
+                    const prompt = `I am on a weight loss diet, aiming for 1700-1800 calories per day. My current meal is "${mealName}: ${mealDetails}" which is approximately ${mealCalories} calories. Suggest one healthy alternative meal, preferably inspired by Uzbek cuisine or using common Uzbek ingredients, with a similar calorie count (around ${mealCalories} calories). Provide the meal name, a brief description, and its approximate calorie count. Format it clearly.`;
+                    
+                    try {
+                        const generatedText = await callGeminiAPI(prompt);
+                        smartSwapResultDiv.innerHTML = generatedText.replace(/\n/g, '<br>');
+                    } catch (error) {
+                        smartSwapResultDiv.textContent = 'Sorry, I couldn\'t fetch a suggestion at this time. Please try again later.';
+                        console.error("Error fetching smart swap:", error);
+                    } finally {
+                        smartSwapLoader.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+
+        const weeklyCalorieData = {
+            labels: mealPlanData.map(d => d.day),
+            datasets: [
+                { label: 'Planned Daily Calories', data: mealPlanData.map(d => d.totalCalories), borderColor: 'rgba(59, 130, 246, 1)', backgroundColor: 'rgba(59, 130, 246, 0.2)', fill: true, tension: 0.1 },
+                { label: 'Target Min Calories (1700)', data: Array(7).fill(1700), borderColor: 'rgba(239, 68, 68, 0.5)', borderDash: [5, 5], fill: false, pointRadius: 0, },
+                { label: 'Target Max Calories (1800)', data: Array(7).fill(1800), borderColor: 'rgba(16, 185, 129, 0.5)', borderDash: [5, 5], fill: false, pointRadius: 0, }
+            ]
+        };
+        const weeklyCalorieConfig = {
+            type: 'line', data: weeklyCalorieData,
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: false, suggestedMin: 1000, suggestedMax: 2000 } },
+                plugins: { legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false } }
+            }
+        };
+        const weeklyCalorieChartCtx = document.getElementById('weeklyCalorieChart');
+        if (weeklyCalorieChartCtx) { new Chart(weeklyCalorieChartCtx, weeklyCalorieConfig); }
+
+        const getMotivationButton = document.getElementById('getMotivationButton');
+        const motivationResultDiv = document.getElementById('motivationResult');
+        const motivationLoader = document.getElementById('motivationLoader');
+
+        if (getMotivationButton) {
+            getMotivationButton.addEventListener('click', async () => {
+                motivationResultDiv.classList.add('hidden');
+                motivationLoader.classList.remove('hidden');
+                const prompt = "Provide a short, encouraging, and motivational tip for someone on a 3-month weight loss journey. Keep it concise and positive. Focus on perseverance and celebrating small wins.";
+                try {
+                    const tip = await callGeminiAPI(prompt);
+                    motivationResultDiv.textContent = tip;
+                } catch (error) {
+                    motivationResultDiv.textContent = 'Could not fetch a tip right now. Keep going, you are doing great!';
+                    console.error("Error fetching motivation:", error);
+                } finally {
+                    motivationLoader.classList.add('hidden');
+                    motivationResultDiv.classList.remove('hidden');
+                }
+            });
+        }
+
+        async function callGeminiAPI(promptText) {
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{
+                    parts: [{ text: promptText }]
+                }]
+            };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorBody = await response.text();
+                throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
+            }
+
+            const result = await response.json();
+
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                return result.candidates[0].content.parts[0].text;
+            } else {
+                console.error("Unexpected API response structure:", result);
+                throw new Error('Failed to parse content from API response.');
+            }
+        }
+
     </script>
 </body>
-
 </html>
