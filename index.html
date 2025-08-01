@@ -1,625 +1,476 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru" class="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My 3-Month Weight Loss Journey</title>
+    <title>Asl Marka - AI Платформа Автоматизации Склада</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Visualization & Content Choices:
-        - Overview: HTML stats for goals (Inform).
-        - My Plan: HTML list for principles, Chart.js Pie chart for macros (Inform/Compare).
-        - Uzbek Cuisine: HTML styled lists/columns (Organize).
-        - Meal Plan: HTML cards/lists for daily meals with Gemini-powered "✨ Smart Swap" buttons for alternatives; Chart.js Line chart for weekly calorie overview (Inform/Organize/Change/Generate).
-        - Workout Schedule: HTML list/grid (Inform).
-        - Tips: HTML text with Gemini-powered "✨ Daily Motivation" button (Inform/Generate).
-        All interactions via vanilla JS. Chart.js for canvas-based charts. Gemini API for dynamic content generation. No SVG/Mermaid. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f9fafb; /* Light gray background */
         }
-        .tab-button {
-            transition: all 0.3s ease;
+        .gradient-text {
+            background: linear-gradient(90deg, #4F46E5, #2563EB);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        .tab-button.active {
-            border-color: #3b82f6; /* Blue-500 */
-            color: #3b82f6;
-            background-color: #eff6ff; /* Blue-50 */
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 300px;
-            max-height: 400px;
-        }
-        @media (min-width: 768px) { /* md breakpoint */
-            .chart-container {
-                height: 350px;
-            }
-        }
-        h2 {
-            font-size: 1.75rem; /* Tailwind text-2xl */
-            font-weight: 600; /* Tailwind font-semibold */
-            margin-bottom: 1rem; /* Tailwind mb-4 */
-            color: #1f2937; /* Gray-800 */
-        }
-        h3 {
-            font-size: 1.25rem; /* Tailwind text-xl */
-            font-weight: 600; /* Tailwind font-semibold */
-            margin-top: 1.5rem; /* Tailwind mt-6 */
-            margin-bottom: 0.75rem; /* Tailwind mb-3 */
-            color: #374151; /* Gray-700 */
-        }
-        .card {
-            background-color: white;
-            border-radius: 0.5rem; /* Tailwind rounded-lg */
-            padding: 1.5rem; /* Tailwind p-6 */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Tailwind shadow-md */
-            margin-bottom: 1rem; /* Tailwind mb-4 */
-        }
-        .list-disc li {
-            margin-bottom: 0.5rem; /* Tailwind mb-2 */
-        }
-        .nav-icon {
-            margin-right: 0.5rem;
-        }
-        .gemini-button {
-            background-color: #8b5cf6; /* Violet-500 */
+        .chat-bubble-user {
+            background-color: #3B82F6;
             color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem; /* Tailwind rounded-md */
-            font-weight: 500; /* Tailwind font-medium */
-            transition: background-color 0.3s ease;
         }
-        .gemini-button:hover {
-            background-color: #7c3aed; /* Violet-600 */
+        .chat-bubble-ai {
+            background-color: #E5E7EB;
+            color: #1F2937;
         }
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
+        .dark .chat-bubble-ai {
+            background-color: #374151;
+            color: #F9FAFB;
         }
-        .modal.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        .modal-content {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        .loading-spinner {
-            border: 4px solid #f3f3f3; /* Light grey */
-            border-top: 4px solid #8b5cf6; /* Violet-500 */
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        /* Анимация для появления чата */
+        #chat-modal {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
         }
     </style>
+    <script>
+        // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
 </head>
-<body class="text-gray-700">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 antialiased">
 
-    <header class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center">
-            <h1 class="text-3xl sm:text-4xl font-bold">My 3-Month Weight Loss Journey</h1>
-            <p class="mt-2 text-lg opacity-90">Your personalized plan for a healthier you in Uzbekistan!</p>
+    <!-- Header -->
+    <header class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-gray-800 dark:text-white">
+                Asl Marka
+            </div>
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="#features" class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">Возможности</a>
+                <a href="#roi-calculator" class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">Выгода</a>
+                <a href="#roles" class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">Роли</a>
+            </nav>
+            <div class="flex items-center">
+                 <a href="#" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 text-sm font-semibold">
+                    Запросить демо
+                </a>
+                <button id="theme-toggle" type="button" class="ml-4 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
+                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 5.05A1 1 0 003.636 6.464l.707.707a1 1 0 001.414-1.414l-.707-.707zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
         </div>
     </header>
 
-    <nav class="bg-white shadow-md sticky top-0 z-50">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-wrap justify-center -mb-px">
-                <button data-tab="overview" class="tab-button active text-sm sm:text-base font-medium text-gray-500 hover:text-blue-600 hover:border-blue-300 border-b-2 border-transparent px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap">
-                    <span class="nav-icon">🎯</span>Overview & Goals
-                </button>
-                <button data-tab="myPlan" class="tab-button text-sm sm:text-base font-medium text-gray-500 hover:text-blue-600 hover:border-blue-300 border-b-2 border-transparent px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap">
-                    <span class="nav-icon">📖</span>My Plan
-                </button>
-                <button data-tab="uzbekCuisine" class="tab-button text-sm sm:text-base font-medium text-gray-500 hover:text-blue-600 hover:border-blue-300 border-b-2 border-transparent px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap">
-                    <span class="nav-icon">🍲</span>Uzbek Cuisine Guide
-                </button>
-                <button data-tab="mealPlan" class="tab-button text-sm sm:text-base font-medium text-gray-500 hover:text-blue-600 hover:border-blue-300 border-b-2 border-transparent px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap">
-                    <span class="nav-icon">🥗</span>Weekly Meal Plan
-                </button>
-                <button data-tab="workoutSchedule" class="tab-button text-sm sm:text-base font-medium text-gray-500 hover:text-blue-600 hover:border-blue-300 border-b-2 border-transparent px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap">
-                    <span class="nav-icon">🏋️</span>Workout Schedule
-                </button>
-                <button data-tab="tips" class="tab-button text-sm sm:text-base font-medium text-gray-500 hover:text-blue-600 hover:border-blue-300 border-b-2 border-transparent px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap">
-                    <span class="nav-icon">💡</span>Progress & Tips
-                </button>
-            </div>
-        </div>
-    </nav>
-
-    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
-        <div id="overview" class="tab-content active">
-            <div class="card">
-                <h2>🎯 Overview & Goals</h2>
-                <p class="mb-6 text-gray-600">This section summarizes your primary weight loss targets and current body metrics. It's your quick reference to stay focused on the bigger picture of your 3-month journey.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-center">
-                    <div class="bg-blue-50 p-6 rounded-lg shadow">
-                        <h3 class="text-xl font-semibold text-blue-700">Target Weight Loss</h3>
-                        <p class="text-3xl font-bold text-blue-600">10 kg</p>
-                        <p class="text-sm text-gray-500">Over 3 months</p>
-                    </div>
-                    <div class="bg-green-50 p-6 rounded-lg shadow">
-                        <h3 class="text-xl font-semibold text-green-700">Weekly Goal</h3>
-                        <p class="text-3xl font-bold text-green-600">~0.8 kg</p>
-                        <p class="text-sm text-gray-500">Approx. 0.77-0.83 kg</p>
-                    </div>
-                    <div class="bg-indigo-50 p-6 rounded-lg shadow">
-                        <h3 class="text-xl font-semibold text-indigo-700">Target Daily Calories</h3>
-                        <p class="text-3xl font-bold text-indigo-600">1700-1800</p>
-                        <p class="text-sm text-gray-500">To create an ~880 Cal deficit</p>
-                    </div>
-                </div>
-                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div class="bg-gray-50 p-6 rounded-lg shadow">
-                        <h3 class="text-xl font-semibold text-gray-700">Body Metrics</h3>
-                        <ul class="list-disc list-inside text-gray-600 mt-2">
-                            <li>Current Weight: 75 kg</li>
-                            <li>Target Weight: 65 kg</li>
-                            <li>Height: 175 cm</li>
-                            <li>Current BMI: 24.49 (Healthy)</li>
-                            <li>Target BMI: 21.22 (Healthy)</li>
-                            <li>BMR: 1600 Calories</li>
-                            <li>Estimated TDEE: 2640 Calories</li>
-                        </ul>
-                    </div>
-                    <div class="bg-gray-50 p-6 rounded-lg shadow">
-                        <h3 class="text-xl font-semibold text-gray-700">Timeline Visualized</h3>
-                        <div class="w-full bg-gray-200 rounded-full h-6 mt-3">
-                             <div class="bg-blue-500 h-6 rounded-full text-xs font-medium text-blue-100 text-center p-1 leading-none" style="width: 5%" id="progressTime">Week 1 of 12</div>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2">This is a visual representation. Track your actual progress weekly!</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="myPlan" class="tab-content">
-            <div class="card">
-                <h2>📖 My Plan: Principles & Macronutrients</h2>
-                <p class="mb-6 text-gray-600">This section outlines the core principles for your success and your target macronutrient distribution. Understanding these will help you make informed food choices daily.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <h3>Key Principles for Success</h3>
-                        <ul class="list-disc pl-5 space-y-1 text-gray-600">
-                            <li>Consistent Calorie Tracking (1700-1800 Cal/day)</li>
-                            <li>Balanced Macronutrients</li>
-                            <li>Hydration: 2.5-3.5 liters of water daily</li>
-                            <li>Prioritize Whole, Unprocessed Foods</li>
-                            <li>Practice Portion Control</li>
-                            <li>Make Smart Uzbek Food Choices</li>
-                            <li>Regular Exercise: 45-60 mins daily (Cardio & Strength)</li>
-                            <li>Adequate Sleep: 7-9 hours</li>
-                            <li>Mindful Eating: Eat slowly, savor food</li>
-                            <li>Patience and Consistency</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h3>Target Macronutrient Distribution</h3>
-                        <p class="text-sm text-gray-500 mb-2">Based on ~1750 Calories daily. Adjust portions to meet these targets.</p>
-                        <div class="chart-container h-64 md:h-80">
-                            <canvas id="macroChart"></canvas>
-                        </div>
-                         <ul class="list-disc list-inside text-gray-600 mt-4">
-                            <li><strong>Protein:</strong> 104-143g (416-572 Cal)</li>
-                            <li><strong>Fats:</strong> 39-58g (350-525 Cal)</li>
-                            <li><strong>Carbohydrates:</strong> ~205g (~819 Cal)</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="uzbekCuisine" class="tab-content">
-            <div class="card">
-                <h2>🍲 Uzbek Cuisine Guide for Weight Loss</h2>
-                <p class="mb-6 text-gray-600">Navigating local cuisine is key! Here’s a guide to making healthy choices with delicious Uzbek food. Focus on preparation methods (grilled, steamed, baked) and portion sizes.</p>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-green-50 p-4 rounded-lg shadow">
-                        <h3 class="text-green-700"><span class="nav-icon">👍</span>Embrace These</h3>
-                        <ul class="list-disc pl-5 space-y-1 text-gray-600">
-                            <li>Soups (Shurpa, Mastava - broth-based)</li>
-                            <li>Grilled Meats (Shashlik - chicken, fish, lean beef)</li>
-                            <li>Fresh Salads (Achichuk, etc. - light dressing)</li>
-                            <li>Steamed/Stewed Dishes (Dimlama - control oil)</li>
-                            <li>Legumes (Beans, Lentils, Chickpeas)</li>
-                            <li>Dairy (Qatiq, Suzma, Kefir - plain, unsweetened)</li>
-                            <li>Whole Fruits & Vegetables</li>
-                            <li>Green Tea (Kuk Choy) & Black Tea (Qora Choy) - no sugar</li>
-                        </ul>
-                    </div>
-                    <div class="bg-yellow-50 p-4 rounded-lg shadow">
-                        <h3 class="text-yellow-700"><span class="nav-icon">🤔</span>Moderate/Be Mindful Of</h3>
-                        <ul class="list-disc pl-5 space-y-1 text-gray-600">
-                            <li>Plov (small portions, less oil, more meat/veg)</li>
-                            <li>Non (Bread - portion control, whole grain if possible)</li>
-                            <li>Manti, Somsa, Chuchvara (lean fillings, steamed/baked)</li>
-                            <li>Lagman (broth-based, lots of veg, less oil/noodles)</li>
-                            <li>Fats and Oils (request less, use healthy oils sparingly)</li>
-                        </ul>
-                    </div>
-                    <div class="bg-red-50 p-4 rounded-lg shadow">
-                        <h3 class="text-red-700"><span class="nav-icon">🚫</span>Limit/Avoid</h3>
-                        <ul class="list-disc pl-5 space-y-1 text-gray-600">
-                            <li>Fried Foods (fried somsa, bo'g'irsoq)</li>
-                            <li>Sugary Drinks & Sweets (sugared compote, pastries)</li>
-                            <li>Processed Snacks (chips, crackers)</li>
-                            <li>Excessive Cream/Rich Sauces</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="mealPlan" class="tab-content">
-            <div class="card">
-                <h2>🥗 Sample Weekly Meal Plan (1700-1800 Calories/Day)</h2>
-                <p class="mb-6 text-gray-600">This is a sample plan. Feel free to swap meals with similar nutritional values. "Non" refers to a moderate slice. Adjust portions to meet your daily calorie target. Click on a day to see the meal details. Use "✨ Smart Swap" for AI-powered alternatives!</p>
-
-                <div class="mb-6 chart-container h-80 md:h-96">
-                    <canvas id="weeklyCalorieChart"></canvas>
-                </div>
-
-                <div id="mealPlanAccordion" class="space-y-2">
-                </div>
-            </div>
-        </div>
-
-        <div id="workoutSchedule" class="tab-content">
-            <div class="card">
-                <h2>🏋️ Workout Schedule Integration</h2>
-                <p class="mb-6 text-gray-600">Your daily 45-60 minutes of exercise is fantastic! Here’s a sample weekly structure. Remember to listen to your body and include rest and recovery.</p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div class="p-4 bg-gray-50 rounded-lg shadow"><strong>Monday:</strong> Full Body Strength Training</div>
-                    <div class="p-4 bg-gray-50 rounded-lg shadow"><strong>Tuesday:</strong> Cardio (e.g., 45 min run/brisk walk + 15 min core)</div>
-                    <div class="p-4 bg-gray-50 rounded-lg shadow"><strong>Wednesday:</strong> Upper Body Strength Training</div>
-                    <div class="p-4 bg-gray-50 rounded-lg shadow"><strong>Thursday:</strong> Cardio (e.g., 45 min cycling + 15 min stretching)</div>
-                    <div class="p-4 bg-gray-50 rounded-lg shadow"><strong>Friday:</strong> Lower Body Strength Training</div>
-                    <div class="p-4 bg-gray-50 rounded-lg shadow"><strong>Saturday:</strong> Longer Cardio (e.g., 60 min hike, swim, or sports)</div>
-                    <div class="p-4 bg-gray-50 rounded-lg shadow"><strong>Sunday:</strong> Active Recovery (Yoga, Pilates, light walk)</div>
-                </div>
-            </div>
-        </div>
-
-        <div id="tips" class="tab-content">
-            <div class="card">
-                <h2>💡 Progress & Important Tips</h2>
-                <p class="mb-6 text-gray-600">Remember these important notes as you progress on your journey. Consistency and a positive mindset are your greatest allies! Need a boost? Get some AI-powered motivation below.</p>
-                <ul class="list-disc pl-5 space-y-2 text-gray-600">
-                    <li><strong>Flexibility:</strong> This is a sample plan. Swap meals with similar nutritional values based on preferences and availability.</li>
-                    <li><strong>Cooking at Home:</strong> Gives you better control over ingredients and portions.</li>
-                    <li><strong>Eating Out:</strong> Make smart choices: grilled vs. fried, less oil, more vegetables, control portions.</li>
-                    <li><strong>Listen to Your Body:</strong> If excessively hungry, add non-starchy vegetables or lean protein. If full, reduce portions slightly.</li>
-                    <li><strong>Plateaus:</strong> Normal for weight loss to slow. Re-evaluate intake/activity, be patient. May need slight adjustments.</li>
-                    <li><strong>Non-Scale Victories:</strong> Notice how clothes fit, energy levels, workout improvements. These are key progress indicators!</li>
-                    <li><strong>Consult Professionals:</strong> Always wise to discuss significant dietary changes or new exercise programs with your doctor or a registered dietitian.</li>
-                </ul>
-
-                <div class="mt-8 text-center">
-                    <button id="getMotivationButton" class="gemini-button">✨ Get Daily Motivation</button>
-                    <div id="motivationResult" class="mt-4 p-4 bg-purple-50 text-purple-700 rounded-lg min-h-[50px] flex items-center justify-center hidden">
-                        Click the button for a motivational tip!
-                    </div>
-                     <div id="motivationLoader" class="loading-spinner mt-4 hidden"></div>
-                </div>
-            </div>
+    <!-- Hero Section -->
+    <main class="container mx-auto px-6 py-16 md:py-24 text-center">
+        <h1 class="text-4xl md:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight">
+            Автоматизация склада и производства <br class="hidden md:block"> с <span class="gradient-text">100% точностью</span>
+        </h1>
+        <p class="mt-6 max-w-3xl mx-auto text-lg md:text-xl text-gray-600 dark:text-gray-300">
+            Специализированный B2B SaaS-инструмент для предприятий Узбекистана. Гарантируем полное соответствие требованиям <strong>Asl Belgisi</strong> и <strong>Didox</strong>, минимизируем ошибки и повышаем эффективность ваших процессов.
+        </p>
+        <div class="mt-10 flex justify-center items-center gap-4">
+            <a href="#" class="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 font-semibold">
+                Запросить демо-доступ
+            </a>
+            <a href="#features" class="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-8 py-4 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 font-semibold">
+                Узнать больше
+            </a>
         </div>
     </main>
 
-    <footer class="text-center py-8 mt-8 bg-gray-100 border-t border-gray-200">
-        <p class="text-gray-500">&copy; <span id="currentYear"></span> Your Personalized Weight Loss Plan. Stay focused and enjoy the journey!</p>
+    <!-- Features Section -->
+    <section id="features" class="py-16 md:py-24 bg-white dark:bg-gray-800">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Все, что нужно для маркировки. И ничего лишнего.</h2>
+                 <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600 dark:text-gray-400">
+                    Наша платформа состоит из двух взаимосвязанных компонентов для максимальной эффективности.
+                </p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div class="p-8">
+                    <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Веб-приложение — Командный центр</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-6">
+                        Централизованное управление всеми процессами: от заказа кодов до финального ЭСФ. Предназначено для менеджеров и администраторов.
+                    </p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <span><strong>Управление и аналитика:</strong> Полный контроль над номенклатурой, контрагентами и пользователями. Гибкие отчеты и дашборды.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <span><strong>Интеграции:</strong> Бесшовная работа с Asl Belgisi и Didox. Настройка уведомлений в Telegram.</span>
+                        </li>
+                        <li class="flex items-start">
+                             <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <span><strong>Документооборот:</strong> Создание заданий на отгрузку и автоматическое формирование ЭСФ/ЭТТН.</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-gray-200 dark:bg-gray-800 p-8 rounded-lg">
+                    <img src="https://placehold.co/1200x800/E2E8F0/4A5568?text=Веб-интерфейс" alt="Веб-интерфейс" class="rounded-lg shadow-lg">
+                </div>
+            </div>
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center mt-16">
+                 <div class="bg-gray-200 dark:bg-gray-800 p-8 rounded-lg md:order-last">
+                    <img src="https://placehold.co/1200x800/E2E8F0/4A5568?text=Android+ТСД" alt="Android ТСД" class="rounded-lg shadow-lg">
+                </div>
+                <div class="p-8">
+                    <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Android-приложение — Рабочий инструмент</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-6">
+                        Быстрое и безошибочное выполнение операций прямо на складе. Устанавливается на Терминал Сбора Данных (ТСД).
+                    </p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <span><strong>Умное сканирование:</strong> Мгновенная проверка статуса КМ, КИГУ, КИТУ с контекстно-зависимыми подсказками.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <span><strong>Надежная агрегация:</strong> Создание, изменение и расформирование агрегатов с валидацией "на лету".</span>
+                        </li>
+                        <li class="flex items-start">
+                             <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <span><strong>Офлайн-режим:</strong> Возможность работы при потере связи с автоматической синхронизацией данных.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ROI Calculator Section -->
+    <section id="roi-calculator" class="py-16 md:py-24 bg-gray-50 dark:bg-gray-900">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Рассчитайте вашу выгоду с помощью ИИ</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600 dark:text-gray-400">
+                    Введите ваши текущие показатели, и наш AI-аналитик подготовит персональный отчет о потенциальной экономии.
+                </p>
+            </div>
+            <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <label for="workers" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Кол-во кладовщиков</label>
+                            <input type="number" id="workers" value="5" class="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-0">
+                        </div>
+                        <div>
+                            <label for="shipments" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Отгрузок в день</label>
+                            <input type="number" id="shipments" value="50" class="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-0">
+                        </div>
+                        <div class="sm:col-span-2">
+                             <label for="errors" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Процент ошибок при сборке (%)</label>
+                            <input type="number" id="errors" value="3" class="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-0">
+                        </div>
+                    </div>
+                    <button id="generate-roi-btn" class="mt-8 w-full bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 font-semibold flex items-center justify-center">
+                        <span class="mr-2">✨</span> Сгенерировать отчет
+                    </button>
+                </div>
+                <div id="roi-result-container" class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg min-h-[200px]">
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Ваш персональный отчет:</h3>
+                    <div id="roi-result-content" class="text-gray-600 dark:text-gray-300 space-y-3">
+                        <p>Здесь появится анализ вашей потенциальной выгоды...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Roles Section -->
+    <section id="roles" class="py-16 md:py-24 bg-white dark:bg-gray-800">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Гибкая ролевая модель</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600 dark:text-gray-400">
+                    Четкое разделение прав и обязанностей для каждой роли в вашей команде.
+                </p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="text-center p-4">
+                    <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Админ Завода</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Управляет организацией, пользователями, заказывает КМ, инициирует отгрузки.</p>
+                </div>
+                 <div class="text-center p-4">
+                    <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Админ Склада</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Управляет операциями и пользователями только на вверенном ему складе.</p>
+                </div>
+                 <div class="text-center p-4">
+                    <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Кладовщик</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Выполняет задания на агрегацию и отгрузку с помощью ТСД.</p>
+                </div>
+                 <div class="text-center p-4">
+                    <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Супер-Админ</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Владелец платформы, управляющий клиентами и системой в целом.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="bg-blue-600 dark:bg-blue-700">
+        <div class="container mx-auto px-6 py-16 text-center">
+            <h2 class="text-3xl font-extrabold text-white">Готовы повысить эффективность вашего склада?</h2>
+            <p class="mt-4 text-lg text-blue-200 max-w-2xl mx-auto">
+                Свяжитесь с нами сегодня, чтобы получить персональную демонстрацию платформы и узнать, как Asl Marka может помочь вашему бизнесу.
+            </p>
+            <div class="mt-8">
+                <a href="#" class="bg-white text-blue-600 px-8 py-4 rounded-lg hover:bg-gray-100 font-bold">
+                    Запросить демо
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-900">
+        <div class="container mx-auto px-6 py-8 flex justify-between items-center">
+            <p class="text-gray-500 dark:text-gray-400">&copy; 2025 Asl Marka. Все права защищены.</p>
+            <div class="flex space-x-4">
+                <a href="#" class="text-gray-500 hover:text-blue-600 dark:hover:text-blue-400">Telegram</a>
+                <a href="#" class="text-gray-500 hover:text-blue-600 dark:hover:text-blue-400">LinkedIn</a>
+            </div>
+        </div>
     </footer>
 
-    <div id="smartSwapModal" class="modal">
-        <div class="modal-content">
-            <h3 class="text-xl font-semibold mb-4 text-gray-800">✨ Smart Meal Swap Suggestion</h3>
-            <div id="smartSwapResult" class="text-gray-600 mb-4 min-h-[100px]">
-                Loading suggestion...
+    <!-- AI Chat Assistant -->
+    <div id="chat-container" class="fixed bottom-5 right-5 z-50">
+        <!-- Chat Button -->
+        <button id="chat-open-btn" class="bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+        </button>
+        <!-- Chat Modal -->
+        <div id="chat-modal" class="hidden absolute bottom-20 right-0 w-80 sm:w-96 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border dark:border-gray-700 origin-bottom-right">
+            <div class="flex justify-between items-center p-4 border-b dark:border-gray-700">
+                <h3 class="font-semibold text-lg">AI-Ассистент</h3>
+                <button id="chat-close-btn" class="text-gray-400 hover:text-gray-600 dark:hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
-            <div id="smartSwapLoader" class="loading-spinner mb-4"></div>
-            <button id="closeSmartSwapModal" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
-                Close
-            </button>
+            <div id="chat-messages" class="p-4 h-80 overflow-y-auto space-y-4">
+                <!-- AI Welcome Message -->
+                <div class="flex">
+                    <div class="rounded-lg p-3 max-w-xs chat-bubble-ai">
+                        <p class="text-sm">Здравствуйте! Я AI-ассистент Asl Marka. Чем могу помочь?</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t dark:border-gray-700">
+                <form id="chat-form" class="flex items-center space-x-2">
+                    <input type="text" id="chat-input" placeholder="Спросите что-нибудь..." class="w-full rounded-md bg-gray-100 dark:bg-gray-700 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-0">
+                    <button type="submit" class="bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
     <script>
-        const tabButtons = document.querySelectorAll('.tab-button');
-        const tabContents = document.querySelectorAll('.tab-content');
+        // --- THEME TOGGLE SCRIPT ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
 
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
+        function updateThemeUI(isDarkMode) {
+            if (isDarkMode) {
+                themeToggleLightIcon.classList.remove('hidden');
+                themeToggleDarkIcon.classList.add('hidden');
+            } else {
+                themeToggleDarkIcon.classList.remove('hidden');
+                themeToggleLightIcon.classList.add('hidden');
+            }
+        }
 
-                tabContents.forEach(content => content.classList.remove('active'));
-                document.getElementById(button.dataset.tab).classList.add('active');
-            });
+        const isInitialDark = localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        updateThemeUI(isInitialDark);
+
+        themeToggleBtn.addEventListener('click', function() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('color-theme', isDark ? 'dark' : 'light');
+            updateThemeUI(isDark);
         });
 
-        document.getElementById('currentYear').textContent = new Date().getFullYear();
-        
-        const totalWeeks = 12;
-        let currentWeek = 1; 
-        const progressTimeBar = document.getElementById('progressTime');
-        if (progressTimeBar) {
-            progressTimeBar.style.width = `${(currentWeek / totalWeeks) * 100}%`;
-            progressTimeBar.textContent = `Week ${currentWeek} of ${totalWeeks}`;
-        }
+        // --- GEMINI API SCRIPT ---
+        const apiKey = ""; // API-ключ будет предоставлен средой выполнения
+        const apiUrlFlash = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
-        const macroData = {
-            labels: ['Protein (104-143g)', 'Fats (39-58g)', 'Carbohydrates (~205g)'],
-            datasets: [{
-                label: 'Target Macronutrient Calories',
-                data: [494, 437, 819],
-                backgroundColor: ['rgba(59, 130, 246, 0.7)','rgba(16, 185, 129, 0.7)','rgba(245, 158, 11, 0.7)'],
-                borderColor: ['rgba(59, 130, 246, 1)','rgba(16, 185, 129, 1)','rgba(245, 158, 11, 1)'],
-                borderWidth: 1
-            }]
-        };
-        const macroConfig = {
-            type: 'pie',
-            data: macroData,
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'top' },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.label || '';
-                                if (label) { label += ': '; }
-                                if (context.parsed !== null) { label += context.parsed + ' Calories'; }
-                                return label;
-                            }
-                        }
-                    }
-                }
-            }
-        };
-        const macroChartCtx = document.getElementById('macroChart');
-        if (macroChartCtx) { new Chart(macroChartCtx, macroConfig); }
+        // --- ROI Calculator ---
+        const generateRoiBtn = document.getElementById('generate-roi-btn');
+        const roiResultContent = document.getElementById('roi-result-content');
 
-        const mealPlanData = [
-            { day: "Monday", workout: "Strength Training", meals: [
-                { name: "Breakfast", calories: 400, details: "Oatmeal (1/2 cup dry) with water/low-fat milk, berries (1/2 cup), chopped walnuts (10g). Green tea." },
-                { name: "Lunch", calories: 500, details: "Large bowl of chicken shurpa (vegetables, lean chicken). Small non. Tomato/cucumber salad." },
-                { name: "Snack", calories: 150, details: "1 apple, handful of almonds (15g)." },
-                { name: "Dinner", calories: 600, details: "Grilled fish (150g), steamed/roasted vegetables. Quinoa or buckwheat (1/2 cup cooked)." }
-            ], totalCalories: 1650 },
-            { day: "Tuesday", workout: "Cardio - Brisk Walking/Jogging", meals: [
-                { name: "Breakfast", calories: 350, details: "2 boiled eggs, 1 slice whole-wheat non, sliced tomatoes/cucumbers. Black tea." },
-                { name: "Lunch", calories: 550, details: "Mastava (rice & veg soup with beef) - focus on broth/veg. Achichuk salad." },
-                { name: "Snack", calories: 150, details: "Plain qatiq (1 cup) with flax seeds." },
-                { name: "Dinner", calories: 600, details: "Chicken breast (150g) stir-fried with vegetables (minimal oil). Brown rice (1/2 cup cooked)." }
-            ], totalCalories: 1650 },
-            { day: "Wednesday", workout: "Strength Training", meals: [
-                { name: "Breakfast", calories: 400, details: "Smoothie (spinach, banana, protein powder, low-fat milk/qatiq, chia seeds)." },
-                { name: "Lunch", calories: 500, details: "Dimlama (stewed lean beef/chicken with potatoes, carrots, cabbage, onions – emphasize veg)." },
-                { name: "Snack", calories: 150, details: "1 pear, small handful of pumpkin seeds." },
-                { name: "Dinner", calories: 600, details: "Lentil soup. Large green salad (lemon juice, olive oil). Small non." }
-            ], totalCalories: 1650 },
-            { day: "Thursday", workout: "Cardio - Cycling", meals: [
-                { name: "Breakfast", calories: 350, details: "Suzma or cottage cheese (1 cup) with berries, drizzle of honey (1 tsp). Green tea." },
-                { name: "Lunch", calories: 550, details: "Leftover Dimlama." },
-                { name: "Snack", calories: 150, details: "An orange, 1-2 rice cakes." },
-                { name: "Dinner", calories: 600, details: "Chicken/beef shashlik (2-3 skewers), grilled vegetables. Side of Bademjan salad (not too oily)." }
-            ], totalCalories: 1650 },
-            { day: "Friday", workout: "Strength Training", meals: [
-                { name: "Breakfast", calories: 400, details: "Buckwheat kasha (1/2 cup dry) with plain qatiq, chopped dried apricots (2-3)." },
-                { name: "Lunch", calories: 500, details: "Lagman (broth-based, lean meat, lots of veg, moderate noodles)." },
-                { name: "Snack", calories: 150, details: "Handful of walnuts (15g)." },
-                { name: "Dinner", calories: 600, details: "Baked salmon (150g) with asparagus, small baked sweet potato." }
-            ], totalCalories: 1650 },
-            { day: "Saturday", workout: "Longer Cardio or Hike", meals: [
-                { name: "Breakfast", calories: 350, details: "2-egg omelet with spinach/mushrooms. Slice of non." },
-                { name: "Lunch", calories: 550, details: "Small Plov (more meat/carrots, less rice/oil). Large achichuk salad." },
-                { name: "Snack", calories: 150, details: "A glass of kefir." },
-                { name: "Dinner", calories: 600, details: "Manti (4-5 steamed, lean filling) with plain qatiq, large vegetable salad." }
-            ], totalCalories: 1650 },
-            { day: "Sunday", workout: "Active Recovery - Yoga/Stretching", meals: [
-                { name: "Breakfast", calories: 400, details: "Whole-wheat toast (2 slices) with avocado (1/2), sliced tomatoes." },
-                { name: "Lunch", calories: 500, details: "Leftover manti and salad." },
-                { name: "Snack", calories: 150, details: "A peach or other seasonal fruit." },
-                { name: "Dinner", calories: 600, details: "Tovuq shashlik (chicken skewers), large Greek-style salad." }
-            ], totalCalories: 1650 }
-        ];
+        generateRoiBtn.addEventListener('click', async () => {
+            const workers = document.getElementById('workers').value;
+            const shipments = document.getElementById('shipments').value;
+            const errors = document.getElementById('errors').value;
 
-        const mealPlanAccordion = document.getElementById('mealPlanAccordion');
-        const smartSwapModal = document.getElementById('smartSwapModal');
-        const smartSwapResultDiv = document.getElementById('smartSwapResult');
-        const smartSwapLoader = document.getElementById('smartSwapLoader');
-        const closeSmartSwapModalButton = document.getElementById('closeSmartSwapModal');
+            const prompt = `
+                Выступи в роли бизнес-аналитика для B2B SaaS продукта "Asl Marka" в Узбекистане.
+                Продукт автоматизирует складские процессы, связанные с цифровой маркировкой товаров (Asl Belgisi).
+                На основе данных клиента, создай краткий, убедительный и персонализированный отчет (не более 3-4 абзацев) о потенциальной выгоде.
+                Используй формат Markdown для выделения ключевых моментов.
 
-        if (mealPlanAccordion) {
-            mealPlanData.forEach((dayData, index) => {
-                const contentId = `content-${index}`;
-                const dayDiv = document.createElement('div');
-                dayDiv.classList.add('border', 'border-gray-200', 'rounded-md');
+                Данные клиента:
+                - Количество кладовщиков: ${workers}
+                - Среднее количество отгрузок в день: ${shipments}
+                - Текущий процент ошибок при сборке заказов: ${errors}%
 
-                const button = document.createElement('button');
-                button.classList.add('w-full', 'p-4', 'text-left', 'font-semibold', 'text-gray-700', 'hover:bg-gray-50', 'focus:outline-none', 'flex', 'justify-between', 'items-center', 'rounded-t-md');
-                button.setAttribute('aria-expanded', 'false');
-                button.setAttribute('aria-controls', contentId);
-                button.innerHTML = `
-                    <span>${dayData.day} - Approx. ${dayData.totalCalories} Cal (Workout: ${dayData.workout})</span>
-                    <svg class="w-5 h-5 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                `;
+                Структура отчета:
+                1.  **Снижение трудозатрат:** Оцени, как автоматизация сканирования и агрегации сократит время на рутинные операции.
+                2.  **Минимизация ошибок:** Покажи финансовую выгоду от снижения процента ошибок (пересортица, штрафы).
+                3.  **Ускорение отгрузок:** Объясни, как быстрое формирование документов (ЭСФ/ЭТТН) повлияет на скорость работы.
+                4.  **Итог:** Сделай краткое заключение.
 
-                const contentDiv = document.createElement('div');
-                contentDiv.id = contentId;
-                contentDiv.classList.add('p-4', 'border-t', 'border-gray-200', 'bg-gray-50', 'hidden', 'rounded-b-md');
+                Говори уверенно и профессионально.
+            `;
+
+            roiResultContent.innerHTML = '<div class="flex justify-center items-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div><p class="ml-3">Генерируем ваш отчет...</p></div>';
+
+            try {
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                const response = await fetch(apiUrlFlash, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
                 
-                const mealList = document.createElement('ul');
-                mealList.classList.add('space-y-4'); // Increased spacing for swap button
-                dayData.meals.forEach(meal => {
-                    const listItem = document.createElement('li');
-                    listItem.classList.add('flex', 'justify-between', 'items-center');
-                    listItem.innerHTML = `
-                        <div>
-                            <strong class="text-indigo-600">${meal.name} (${meal.calories} Cal):</strong> ${meal.details}
-                        </div>
-                        <button class="gemini-button smart-swap-btn text-xs ml-2 whitespace-nowrap" data-meal-name="${meal.name}" data-meal-details="${meal.details}" data-meal-calories="${meal.calories}">
-                            ✨ Smart Swap
-                        </button>
-                    `;
-                    mealList.appendChild(listItem);
-                });
-                contentDiv.appendChild(mealList);
-
-                button.addEventListener('click', () => {
-                    const isExpanded = button.getAttribute('aria-expanded') === 'true';
-                    button.setAttribute('aria-expanded', !isExpanded);
-                    contentDiv.classList.toggle('hidden');
-                    button.querySelector('svg').classList.toggle('rotate-180');
-                });
-
-                dayDiv.appendChild(button);
-                dayDiv.appendChild(contentDiv);
-                mealPlanAccordion.appendChild(dayDiv);
-            });
-        }
-        
-        if (closeSmartSwapModalButton) {
-            closeSmartSwapModalButton.addEventListener('click', () => {
-                smartSwapModal.classList.remove('active');
-            });
-        }
-        
-        // Event delegation for Smart Swap buttons
-        if (mealPlanAccordion) {
-            mealPlanAccordion.addEventListener('click', async function(event) {
-                if (event.target.classList.contains('smart-swap-btn')) {
-                    const mealName = event.target.dataset.mealName;
-                    const mealDetails = event.target.dataset.mealDetails;
-                    const mealCalories = event.target.dataset.mealCalories;
-
-                    smartSwapModal.classList.add('active');
-                    smartSwapResultDiv.innerHTML = '';
-                    smartSwapLoader.classList.remove('hidden');
-
-                    const prompt = `I am on a weight loss diet, aiming for 1700-1800 calories per day. My current meal is "${mealName}: ${mealDetails}" which is approximately ${mealCalories} calories. Suggest one healthy alternative meal, preferably inspired by Uzbek cuisine or using common Uzbek ingredients, with a similar calorie count (around ${mealCalories} calories). Provide the meal name, a brief description, and its approximate calorie count. Format it clearly.`;
-                    
-                    try {
-                        const generatedText = await callGeminiAPI(prompt);
-                        smartSwapResultDiv.innerHTML = generatedText.replace(/\n/g, '<br>');
-                    } catch (error) {
-                        smartSwapResultDiv.textContent = 'Sorry, I couldn\'t fetch a suggestion at this time. Please try again later.';
-                        console.error("Error fetching smart swap:", error);
-                    } finally {
-                        smartSwapLoader.classList.add('hidden');
-                    }
+                if (result.candidates && result.candidates.length > 0) {
+                    let text = result.candidates[0].content.parts[0].text;
+                    // Простая замена Markdown на HTML
+                    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    text = text.replace(/\n/g, '<br>');
+                    roiResultContent.innerHTML = text;
+                } else {
+                    roiResultContent.textContent = 'Не удалось сгенерировать отчет. Пожалуйста, попробуйте еще раз.';
                 }
-            });
-        }
-
-
-        const weeklyCalorieData = {
-            labels: mealPlanData.map(d => d.day),
-            datasets: [
-                { label: 'Planned Daily Calories', data: mealPlanData.map(d => d.totalCalories), borderColor: 'rgba(59, 130, 246, 1)', backgroundColor: 'rgba(59, 130, 246, 0.2)', fill: true, tension: 0.1 },
-                { label: 'Target Min Calories (1700)', data: Array(7).fill(1700), borderColor: 'rgba(239, 68, 68, 0.5)', borderDash: [5, 5], fill: false, pointRadius: 0, },
-                { label: 'Target Max Calories (1800)', data: Array(7).fill(1800), borderColor: 'rgba(16, 185, 129, 0.5)', borderDash: [5, 5], fill: false, pointRadius: 0, }
-            ]
-        };
-        const weeklyCalorieConfig = {
-            type: 'line', data: weeklyCalorieData,
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: { y: { beginAtZero: false, suggestedMin: 1000, suggestedMax: 2000 } },
-                plugins: { legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false } }
+            } catch (error) {
+                console.error("Error generating ROI report:", error);
+                roiResultContent.textContent = 'Произошла ошибка при обращении к AI. Пожалуйста, проверьте консоль.';
             }
-        };
-        const weeklyCalorieChartCtx = document.getElementById('weeklyCalorieChart');
-        if (weeklyCalorieChartCtx) { new Chart(weeklyCalorieChartCtx, weeklyCalorieConfig); }
+        });
 
-        const getMotivationButton = document.getElementById('getMotivationButton');
-        const motivationResultDiv = document.getElementById('motivationResult');
-        const motivationLoader = document.getElementById('motivationLoader');
+        // --- AI Chat Assistant ---
+        const chatOpenBtn = document.getElementById('chat-open-btn');
+        const chatCloseBtn = document.getElementById('chat-close-btn');
+        const chatModal = document.getElementById('chat-modal');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+        let chatHistory = [];
 
-        if (getMotivationButton) {
-            getMotivationButton.addEventListener('click', async () => {
-                motivationResultDiv.classList.add('hidden');
-                motivationLoader.classList.remove('hidden');
-                const prompt = "Provide a short, encouraging, and motivational tip for someone on a 3-month weight loss journey. Keep it concise and positive. Focus on perseverance and celebrating small wins.";
-                try {
-                    const tip = await callGeminiAPI(prompt);
-                    motivationResultDiv.textContent = tip;
-                } catch (error) {
-                    motivationResultDiv.textContent = 'Could not fetch a tip right now. Keep going, you are doing great!';
-                    console.error("Error fetching motivation:", error);
-                } finally {
-                    motivationLoader.classList.add('hidden');
-                    motivationResultDiv.classList.remove('hidden');
-                }
-            });
-        }
+        chatOpenBtn.addEventListener('click', () => {
+            chatModal.classList.remove('hidden');
+            chatModal.classList.add('opacity-100', 'transform', 'scale-100');
+            chatModal.classList.remove('opacity-0', 'transform', 'scale-95');
+        });
 
-        async function callGeminiAPI(promptText) {
-            const apiKey = ""; 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        chatCloseBtn.addEventListener('click', () => {
+             chatModal.classList.add('opacity-0', 'transform', 'scale-95');
+             setTimeout(() => {
+                chatModal.classList.add('hidden');
+             }, 300);
+        });
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userInput = chatInput.value.trim();
+            if (!userInput) return;
+
+            // Add user message to UI
+            addMessageToUI(userInput, 'user');
+            chatInput.value = '';
             
-            const payload = {
-                contents: [{
-                    parts: [{ text: promptText }]
-                }]
-            };
+            // Add typing indicator
+            const typingIndicator = addTypingIndicator();
 
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            const prompt = `
+                Ты — дружелюбный и профессиональный AI-ассистент компании "Asl Marka".
+                Твоя задача — отвечать на вопросы потенциальных клиентов о платформе автоматизации складских процессов в Узбекистане.
+                Будь кратким, вежливым и по делу. Используй предоставленную историю чата для контекста.
 
-            if (!response.ok) {
-                const errorBody = await response.text();
-                throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
+                Ключевая информация о продукте:
+                - Название: Asl Marka
+                - Цель: Автоматизация процессов, связанных с обязательной цифровой маркировкой (Asl Belgisi, Didox).
+                - Компоненты: Веб-приложение (для менеджеров) и Android-приложение для ТСД (для кладовщиков).
+                - Основные функции: Заказ кодов маркировки, агрегация, отгрузка, создание ЭСФ/ЭТТН, интеграция с госсистемами.
+                - Преимущества: 100% точность учета, снижение ошибок, повышение эффективности, удобный интерфейс.
+                - Поддерживает офлайн-режим на ТСД.
+                - Если спрашивают цену, отвечай, что цена рассчитывается индивидуально и предложи запросить демо или связаться с отделом продаж.
+
+                История чата:
+                ${chatHistory.map(item => `${item.role}: ${item.parts[0].text}`).join('\n')}
+
+                Новый вопрос клиента: ${userInput}
+            `;
+            
+            chatHistory.push({ role: "user", parts: [{ text: userInput }] });
+
+            try {
+                const payload = { contents: chatHistory };
+                const response = await fetch(apiUrlFlash, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                // Remove typing indicator
+                typingIndicator.remove();
+
+                if (result.candidates && result.candidates.length > 0) {
+                    const aiResponse = result.candidates[0].content.parts[0].text;
+                    addMessageToUI(aiResponse, 'ai');
+                    chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+                } else {
+                    addMessageToUI('К сожалению, я не смог обработать ваш запрос. Попробуйте переформулировать.', 'ai');
+                }
+            } catch (error) {
+                console.error("Chat error:", error);
+                typingIndicator.remove();
+                addMessageToUI('Произошла ошибка. Пожалуйста, попробуйте позже.', 'ai');
             }
+        });
 
-            const result = await response.json();
+        function addMessageToUI(message, sender) {
+            const messageWrapper = document.createElement('div');
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add('rounded-lg', 'p-3', 'max-w-xs', 'text-sm');
+            messageBubble.textContent = message;
 
-            if (result.candidates && result.candidates.length > 0 &&
-                result.candidates[0].content && result.candidates[0].content.parts &&
-                result.candidates[0].content.parts.length > 0) {
-                return result.candidates[0].content.parts[0].text;
+            if (sender === 'user') {
+                messageWrapper.classList.add('flex', 'justify-end');
+                messageBubble.classList.add('chat-bubble-user');
             } else {
-                console.error("Unexpected API response structure:", result);
-                throw new Error('Failed to parse content from API response.');
+                messageWrapper.classList.add('flex');
+                messageBubble.classList.add('chat-bubble-ai');
             }
+            
+            messageWrapper.appendChild(messageBubble);
+            chatMessages.appendChild(messageWrapper);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addTypingIndicator() {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('flex', 'typing-indicator');
+            const bubble = document.createElement('div');
+            bubble.classList.add('rounded-lg', 'p-3', 'max-w-xs', 'chat-bubble-ai');
+            bubble.innerHTML = '<div class="flex items-center space-x-1"><div class="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div><div class="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div><div class="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style="animation-delay: 0.4s;"></div></div>';
+            wrapper.appendChild(bubble);
+            chatMessages.appendChild(wrapper);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return wrapper;
         }
 
     </script>
